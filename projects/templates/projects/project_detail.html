@@ -1,0 +1,85 @@
+{% extends 'projects/base.html' %}
+
+{% block title %}{{ project.name }} | TaskFlow{% endblock %}
+
+{% block content %}
+<a href="{% url 'dashboard' %}" class="back-link">← All Projects</a>
+
+<section class="project-hero">
+    <div>
+        <p class="eyebrow">PROJECT BOARD</p>
+        <h1>{{ project.name }}</h1>
+        <p class="muted">{{ project.description|default:"No description provided." }}</p>
+        <div class="member-list">
+            <strong>Team:</strong>
+            {% for member in project.members.all %}
+                <span class="member-chip">{{ member.username }}</span>
+            {% empty %}
+                <span>No members yet</span>
+            {% endfor %}
+        </div>
+    </div>
+    <a href="{% url 'create_task' project.id %}" class="btn btn-primary">+ Add Task</a>
+</section>
+
+{% if project.owner == user %}
+<section class="member-form-card">
+    <h3>Invite a team member</h3>
+    <form method="post" action="{% url 'add_member' project.id %}" class="member-form">
+        {% csrf_token %}
+        <input type="text" name="username" placeholder="Enter registered username" required>
+        <button class="btn btn-outline" type="submit">Add Member</button>
+    </form>
+</section>
+{% endif %}
+
+<div class="board">
+    {% for status_code, status_label in task_statuses %}
+        <section class="board-column">
+            <div class="column-heading">
+                <h3>{{ status_label }}</h3>
+                <span class="column-count">
+                    {% if status_code == 'todo' %}
+                        {{ project.tasks.all|length }}
+                    {% else %}
+                        {{ project.tasks.all|length }}
+                    {% endif %}
+                </span>
+            </div>
+
+            {% for task in tasks %}
+                {% if task.status == status_code %}
+                    <article class="task-card">
+                        <div class="task-card-top">
+                            <span class="priority priority-{{ task.priority }}">{{ task.get_priority_display }}</span>
+                            <span class="task-id">#{{ task.id }}</span>
+                        </div>
+                        <h4><a href="{% url 'task_detail' task.id %}">{{ task.title }}</a></h4>
+                        <p class="description">{{ task.description|default:"No description."|truncatechars:90 }}</p>
+
+                        <div class="task-meta">
+                            <span>Assigned: {{ task.assigned_to.username|default:"Unassigned" }}</span>
+                        </div>
+
+                        {% if task.due_date %}
+                            <p class="due-date">Due: {{ task.due_date|date:"M d, Y" }}</p>
+                        {% endif %}
+
+                        <form method="post" action="{% url 'update_task_status' task.id %}" class="status-form">
+                            {% csrf_token %}
+                            <select name="status" aria-label="Update task status">
+                                <option value="todo" {% if task.status == 'todo' %}selected{% endif %}>To Do</option>
+                                <option value="in_progress" {% if task.status == 'in_progress' %}selected{% endif %}>In Progress</option>
+                                <option value="done" {% if task.status == 'done' %}selected{% endif %}>Done</option>
+                            </select>
+                            <button type="submit" class="btn btn-small">Update</button>
+                        </form>
+                    </article>
+                {% endif %}
+            {% empty %}
+                <p class="muted">No tasks yet.</p>
+            {% endfor %}
+        </section>
+    {% endfor %}
+</div>
+{% endblock %}

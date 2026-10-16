@@ -1,0 +1,67 @@
+{% extends 'projects/base.html' %}
+
+{% block title %}{{ task.title }} | TaskFlow{% endblock %}
+
+{% block content %}
+<a href="{% url 'project_detail' task.project.id %}" class="back-link">← Back to Project</a>
+
+<div class="task-detail-layout">
+    <section class="form-card">
+        <p class="eyebrow">TASK DETAILS</p>
+        <h1>{{ task.title }}</h1>
+        <p class="description">{{ task.description|default:"No description provided." }}</p>
+
+        <div class="detail-row">
+            <span>Status</span>
+            <strong>{{ task.get_status_display }}</strong>
+        </div>
+        <div class="detail-row">
+            <span>Priority</span>
+            <strong>{{ task.get_priority_display }}</strong>
+        </div>
+        <div class="detail-row">
+            <span>Assigned to</span>
+            <strong>{{ task.assigned_to.username|default:"Unassigned" }}</strong>
+        </div>
+        <div class="detail-row">
+            <span>Created by</span>
+            <strong>{{ task.created_by.username }}</strong>
+        </div>
+        <div class="detail-row">
+            <span>Due date</span>
+            <strong>{{ task.due_date|date:"M d, Y"|default:"Not set" }}</strong>
+        </div>
+    </section>
+
+    <section class="form-card comments-card">
+        <h2>Discussion</h2>
+        <p class="muted">Share updates with your project team.</p>
+
+        <form method="post" class="comment-form">
+            {% csrf_token %}
+            {{ form.content }}
+            {% for error in form.content.errors %}
+                <small class="error">{{ error }}</small>
+            {% endfor %}
+            <button class="btn btn-primary" type="submit">Post Comment</button>
+        </form>
+
+        <div class="comments-list">
+            {% for comment in comments %}
+                <article class="comment">
+                    <div class="comment-avatar">{{ comment.author.username|slice:":1"|upper }}</div>
+                    <div class="comment-body">
+                        <div class="comment-heading">
+                            <strong>{{ comment.author.username }}</strong>
+                            <small>{{ comment.created_at|date:"M d, Y · H:i" }}</small>
+                        </div>
+                        <p>{{ comment.content|linebreaksbr }}</p>
+                    </div>
+                </article>
+            {% empty %}
+                <p class="empty-note">No comments yet. Start the discussion.</p>
+            {% endfor %}
+        </div>
+    </section>
+</div>
+{% endblock %}
